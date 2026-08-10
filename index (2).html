@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Правки переводов</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+    background: #f7f6f2;
+    color: #2c2c2a;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  h2.section { font-size: 15px; font-weight: 600; margin: 28px 0 8px; }
+  p.hint { color: #6b6a66; font-size: 13px; margin-top: 0; margin-bottom: 20px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  select, input, textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #d8d6cf;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+  }
+  textarea { min-height: 56px; resize: vertical; margin-bottom: 8px; }
+  #customLang, #customAuthor { display: none; margin-bottom: 8px; }
+  button {
+    cursor: pointer;
+    border: 1px solid #d8d6cf;
+    background: #fff;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  button:hover { background: #f0efe9; }
+  button:active { transform: scale(0.98); }
+  #addBtn { width: 100%; margin-bottom: 8px; background: #2c2c2a; color: #fff; border: none; font-weight: 500; }
+  #addBtn:hover { background: #444441; }
+  details { background: #fff; border: 1px solid #e5e3db; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-size: 14px; font-weight: 500; }
+  .import-area { margin-top: 10px; }
+  .import-area textarea { min-height: 90px; font-family: monospace; font-size: 12px; }
+  .settings-row { display: flex; gap: 8px; margin-top: 8px; }
+  .settings-row input { flex: 1; }
+  .settings-row button { flex-shrink: 0; }
+  #syncStatus { font-size: 12px; color: #6b6a66; margin-top: 6px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toolbar select { width: auto; height: 34px; padding: 4px 8px; }
+  .toolbar button { height: 34px; font-size: 13px; }
+  .card {
+    background: #fff;
+    border: 1px solid #e5e3db;
+    border-left: 4px solid #d8d6cf;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .card.status-pending { border-left-color: #ef9f27; }
+  .card.status-done { border-left-color: #639922; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 6px;
+    background: #eceae2;
+    color: #5f5e5a;
+  }
+  .badge.platform { background: #e6f1fb; color: #0c447c; }
+  .badge.author { background: #f4c0d1; color: #4b1528; }
+  .badge.status-pending { background: #faeeda; color: #854f0b; }
+  .badge.status-done { background: #eaf3de; color: #27500a; }
+  .actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .actions button { height: 28px; padding: 0 9px; font-size: 12px; }
+  .diff { font-size: 14px; line-height: 1.5; }
+  .diff .old { color: #6b6a66; }
+  .diff .arrow { color: #999790; margin: 0 6px; }
+  .status-done .diff { opacity: 0.6; text-decoration: line-through; }
+  #empty { color: #999790; font-size: 14px; text-align: center; padding: 20px 0; }
+  .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+  .edit-row select, .edit-row input { padding: 7px 8px; font-size: 13px; }
+  .edit-form textarea { min-height: 44px; font-size: 13px; margin-bottom: 6px; }
+  .edit-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+  .edit-actions button { height: 28px; padding: 0 10px; font-size: 12px; }
+  .edit-actions .save-btn { background: #2c2c2a; color: #fff; border: none; }
+  .edit-actions .save-btn:hover { background: #444441; }
+</style>
+</head>
+<body>
+
+<h1>Правки переводов</h1>
+<p class="hint">iOS / Android / Веб, любой язык. Данные хранятся в браузере, либо через общий доступ (см. «Настройки общего доступа» ниже).</p>
+
+<div class="row3">
+  <select id="platform">
+    <option value="iOS">iOS</option>
+    <option value="Android">Android</option>
+    <option value="Веб">Веб</option>
+  </select>
+  <select id="language">
+    <option>Русский</option>
+    <option>Английский</option>
+    <option>Азербайджанский</option>
+    <option>Амхарский</option>
+    <option>Армянский</option>
+    <option>Грузинский</option>
+    <option>Казахский</option>
+    <option>Киргизский</option>
+    <option>Таджикский</option>
+    <option>Узбекский</option>
+    <option>Суахили</option>
+    <option value="__custom">Другой…</option>
+  </select>
+  <select id="author">
+    <option value="">Кто вносит — не выбрано</option>
+    <option>Настя</option>
+    <option>Диляра</option>
+    <option>Соня</option>
+    <option>Вика</option>
+    <option value="__custom">Другое имя…</option>
+  </select>
+</div>
+<input id="customLang" placeholder="Свой язык">
+<input id="customAuthor" placeholder="Имя">
+<input id="key" placeholder="Ключ / экран / контекст (необязательно)" style="margin-bottom: 8px;">
+<textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
+<textarea id="newText" placeholder="На что исправить"></textarea>
+<button id="addBtn">+ Добавить правку</button>
+
+<details>
+  <summary>Импорт из таблицы (Excel / Google Sheets)</summary>
+  <div class="import-area">
+    <p class="hint" style="margin-bottom:6px;">Скопируй строки из таблицы (Excel/Sheets) с колонками в порядке: Платформа, Язык, Ключ, Было, Стало, Автор — и вставь сюда. Первая строка может быть заголовком, она пропускается автоматически.</p>
+    <textarea id="importText" placeholder="iOS	Русский	home.title	Старый текст	Новый текст	Настя"></textarea>
+    <button id="importBtn">Импортировать строки</button>
+  </div>
+</details>
+
+<details>
+  <summary>Настройки общего доступа (Google Apps Script)</summary>
+  <div class="import-area">
+    <p class="hint" style="margin-bottom:6px;">Чтобы все видели одни и те же правки (а не каждый свои в браузере), разверни Google Apps Script как веб-приложение поверх Google Таблицы и вставь сюда его URL. Инструкция и код — в чате отдельным сообщением.</p>
+    <div class="settings-row">
+      <input id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <button id="saveApiBtn">Сохранить</button>
+    </div>
+    <div id="syncStatus"></div>
+  </div>
+</details>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <select id="filterPlatform">
+      <option value="">Все платформы</option>
+      <option value="iOS">iOS</option>
+      <option value="Android">Android</option>
+      <option value="Веб">Веб</option>
+    </select>
+    <select id="filterStatus">
+      <option value="">Все статусы</option>
+      <option value="pending">Ожидает</option>
+      <option value="done">Готово</option>
+    </select>
+    <select id="filterLanguage">
+      <option value="">Все языки</option>
+    </select>
+    <select id="filterAuthor">
+      <option value="">Все имена</option>
+      <option>Настя</option>
+      <option>Диляра</option>
+      <option>Соня</option>
+      <option>Вика</option>
+    </select>
+  </div>
+  <button id="exportBtn">⭳ Экспорт в Excel</button>
+</div>
+
+<div id="list"></div>
+<p id="empty" style="display:none;">Пока нет правок. Добавьте первую выше.</p>
+
+<script>
+const STORAGE_KEY = 'pravki_perevodov';
+const API_KEY = 'pravki_api_url';
+let items = [];
+let editingId = null;
+let apiUrl = localStorage.getItem(API_KEY) || '';
+document.getElementById('apiUrl').value = apiUrl;
+
+function esc(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// --- Загрузка / сохранение (локально или через общий Apps Script backend) ---
+async function loadItems() {
+  if (apiUrl) {
+    try {
+      document.getElementById('syncStatus').textContent = 'Загрузка из общего источника…';
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      items = Array.isArray(data) ? data : [];
+      document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
+      return;
+    } catch (e) {
+      document.getElementById('syncStatus').textContent = 'Не удалось загрузить с сервера, показаны локальные данные.';
+    }
+  }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    items = raw ? JSON.parse(raw) : [];
+  } catch (e) { items = []; }
+}
+
+async function saveItems() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  if (apiUrl) {
+    try {
+      document.getElementById('syncStatus').textContent = 'Сохранение…';
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(items)
+      });
+      document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
+    } catch (e) {
+      document.getElementById('syncStatus').textContent = 'Не удалось сохранить на сервер (сохранено только локально).';
+    }
+  }
+}
+
+document.getElementById('saveApiBtn').addEventListener('click', async () => {
+  apiUrl = document.getElementById('apiUrl').value.trim();
+  localStorage.setItem(API_KEY, apiUrl);
+  await loadItems();
+  render();
+});
+
+// --- Язык / автор: показ поля "свой вариант" ---
+const langSel = document.getElementById('language');
+const customLang = document.getElementById('customLang');
+langSel.addEventListener('change', () => {
+  customLang.style.display = langSel.value === '__custom' ? 'block' : 'none';
+});
+const authorSel = document.getElementById('author');
+const customAuthor = document.getElementById('customAuthor');
+authorSel.addEventListener('change', () => {
+  customAuthor.style.display = authorSel.value === '__custom' ? 'block' : 'none';
+});
+
+function populateLanguageFilter() {
+  const sel = document.getElementById('filterLanguage');
+  const current = sel.value;
+  const langs = [...new Set(items.map(i => i.language))].sort((a, b) => a.localeCompare(b, 'ru'));
+  sel.innerHTML = '<option value="">Все языки</option>' + langs.map(l => `<option ${l===current?'selected':''}>${esc(l)}</option>`).join('');
+}
+
+function statusLabel(s) { return s === 'done' ? 'Готово' : 'Ожидает'; }
+
+function render() {
+  populateLanguageFilter();
+  const fp = document.getElementById('filterPlatform').value;
+  const fs = document.getElementById('filterStatus').value;
+  const fl = document.getElementById('filterLanguage').value;
+  const fa = document.getElementById('filterAuthor').value;
+  const list = document.getElementById('list');
+  const filtered = items.filter(it =>
+    (!fp || it.platform === fp) &&
+    (!fs || it.status === fs) &&
+    (!fl || it.language === fl) &&
+    (!fa || it.author === fa)
+  );
+  document.getElementById('empty').style.display = items.length === 0 ? 'block' : 'none';
+
+  const langOptions = ['Русский','Английский','Азербайджанский','Амхарский','Армянский','Грузинский','Казахский','Киргизский','Таджикский','Узбекский','Суахили'];
+  const authorOptions = ['Настя','Диляра','Соня','Вика'];
+
+  list.innerHTML = filtered.slice().reverse().map(it => {
+    if (editingId === it.id) {
+      const isKnownLang = langOptions.includes(it.language);
+      const isKnownAuthor = authorOptions.includes(it.author);
+      return `
+      <div class="card edit-form">
+        <div class="edit-row">
+          <select data-field="platform">
+            <option value="iOS" ${it.platform==='iOS'?'selected':''}>iOS</option>
+            <option value="Android" ${it.platform==='Android'?'selected':''}>Android</option>
+            <option value="Веб" ${it.platform==='Веб'?'selected':''}>Веб</option>
+          </select>
+          <select data-field="language">
+            ${langOptions.map(l => `<option ${it.language===l?'selected':''}>${l}</option>`).join('')}
+            <option value="__custom" ${!isKnownLang?'selected':''}>Другой…</option>
+          </select>
+        </div>
+        <input data-field="customLang" placeholder="Свой язык" value="${!isKnownLang ? esc(it.language) : ''}" style="display:${!isKnownLang?'block':'none'}; margin-bottom:6px;">
+        <div class="edit-row">
+          <select data-field="author">
+            <option value="">Кто вносит — не выбрано</option>
+            ${authorOptions.map(a => `<option ${it.author===a?'selected':''}>${a}</option>`).join('')}
+            <option value="__custom" ${(it.author && !isKnownAuthor)?'selected':''}>Другое имя…</option>
+          </select>
+          <input data-field="key" placeholder="Ключ / экран / контекст" value="${esc(it.key)}">
+        </div>
+        <input data-field="customAuthor" placeholder="Имя" value="${(it.author && !isKnownAuthor) ? esc(it.author) : ''}" style="display:${(it.author && !isKnownAuthor)?'block':'none'}; margin-bottom:6px;">
+        <textarea data-field="oldText" placeholder="Что сейчас">${esc(it.oldText)}</textarea>
+        <textarea data-field="newText" placeholder="На что исправить">${esc(it.newText)}</textarea>
+        <div class="edit-actions">
+          <button data-act="cancel" data-id="${it.id}">Отмена</button>
+          <button data-act="save" data-id="${it.id}" class="save-btn">Сохранить</button>
+        </div>
+      </div>`;
+    }
+    const statusClass = it.status === 'done' ? 'status-done' : 'status-pending';
+    return `
+    <div class="card ${statusClass}">
+      <div class="card-top">
+        <div class="badges">
+          <span class="badge platform">${esc(it.platform)}</span>
+          <span class="badge">${esc(it.language)}</span>
+          ${it.key ? `<span class="badge">${esc(it.key)}</span>` : ''}
+          ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
+          <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
+        </div>
+        <div class="actions">
+          <button data-act="edit" data-id="${it.id}">✎</button>
+          <button data-act="toggle" data-id="${it.id}">${it.status === 'done' ? '↺ Вернуть' : '✓ Готово'}</button>
+          <button data-act="del" data-id="${it.id}">✕</button>
+        </div>
+      </div>
+      <div class="diff">
+        <span class="old">${esc(it.oldText)}</span><span class="arrow">→</span><span>${esc(it.newText)}</span>
+      </div>
+    </div>
+  `;
+  }).join('');
+
+  list.querySelectorAll('[data-field="language"]').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const card = e.target.closest('.edit-form');
+      card.querySelector('[data-field="customLang"]').style.display = e.target.value === '__custom' ? 'block' : 'none';
+    });
+  });
+  list.querySelectorAll('[data-field="author"]').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const card = e.target.closest('.edit-form');
+      card.querySelector('[data-field="customAuthor"]').style.display = e.target.value === '__custom' ? 'block' : 'none';
+    });
+  });
+
+  list.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      if (act === 'del') {
+        if (confirm('Удалить эту правку?')) {
+          items = items.filter(i => i.id !== id);
+          await saveItems();
+        }
+      } else if (act === 'toggle') {
+        const it = items.find(i => i.id === id);
+        if (it) it.status = it.status === 'done' ? 'pending' : 'done';
+        await saveItems();
+      } else if (act === 'edit') {
+        editingId = id;
+      } else if (act === 'cancel') {
+        editingId = null;
+      } else if (act === 'save') {
+        const card = btn.closest('.edit-form');
+        const it = items.find(i => i.id === id);
+        if (it) {
+          const langSelEl = card.querySelector('[data-field="language"]');
+          const customLangVal = card.querySelector('[data-field="customLang"]').value.trim();
+          const authorSelEl = card.querySelector('[data-field="author"]');
+          const customAuthorVal = card.querySelector('[data-field="customAuthor"]').value.trim();
+          it.platform = card.querySelector('[data-field="platform"]').value;
+          it.language = langSelEl.value === '__custom' ? (customLangVal || 'Другой') : langSelEl.value;
+          it.author = authorSelEl.value === '__custom' ? customAuthorVal : authorSelEl.value;
+          it.key = card.querySelector('[data-field="key"]').value.trim();
+          it.oldText = card.querySelector('[data-field="oldText"]').value.trim();
+          it.newText = card.querySelector('[data-field="newText"]').value.trim();
+        }
+        editingId = null;
+        await saveItems();
+      }
+      render();
+    });
+  });
+}
+
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const oldText = document.getElementById('oldText').value.trim();
+  const newText = document.getElementById('newText').value.trim();
+  if (!oldText && !newText) return;
+  const lang = langSel.value === '__custom' ? (customLang.value.trim() || 'Другой') : langSel.value;
+  const author = authorSel.value === '__custom' ? customAuthor.value.trim() : authorSel.value;
+  items.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    platform: document.getElementById('platform').value,
+    language: lang,
+    author: author,
+    key: document.getElementById('key').value.trim(),
+    oldText, newText,
+    status: 'pending'
+  });
+  document.getElementById('key').value = '';
+  document.getElementById('oldText').value = '';
+  document.getElementById('newText').value = '';
+  await saveItems();
+  render();
+});
+
+document.getElementById('filterPlatform').addEventListener('change', render);
+document.getElementById('filterStatus').addEventListener('change', render);
+document.getElementById('filterLanguage').addEventListener('change', render);
+document.getElementById('filterAuthor').addEventListener('change', render);
+
+// --- Импорт из вставленной таблицы (tab-separated, как при копировании из Excel/Sheets) ---
+document.getElementById('importBtn').addEventListener('click', async () => {
+  const raw = document.getElementById('importText').value;
+  if (!raw.trim()) return;
+  const lines = raw.split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim().length > 0);
+  let added = 0;
+  lines.forEach((line, idx) => {
+    const cols = line.split('\t');
+    const [platform, language, key, oldText, newText, author] = cols;
+    if (idx === 0 && /платформ/i.test(platform || '')) return; // пропускаем заголовок
+    if (!platform || !language) return;
+    items.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + idx,
+      platform: platform.trim(),
+      language: language.trim(),
+      key: (key || '').trim(),
+      oldText: (oldText || '').trim(),
+      newText: (newText || '').trim(),
+      author: (author || '').trim(),
+      status: 'pending'
+    });
+    added++;
+  });
+  document.getElementById('importText').value = '';
+  await saveItems();
+  render();
+  alert(added + ' строк импортировано.');
+});
+
+// --- Экспорт в настоящий .xlsx через SheetJS ---
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Статус']];
+  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', statusLabel(i.status)]));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Правки');
+  XLSX.writeFile(wb, 'pravki-perevodov.xlsx');
+});
+
+(async () => {
+  await loadItems();
+  render();
+})();
+</script>
+</body>
+</html>
