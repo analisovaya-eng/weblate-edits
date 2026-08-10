@@ -144,17 +144,7 @@
   </div>
 </details>
 
-<details>
-  <summary>Настройки общего доступа (Google Apps Script)</summary>
-  <div class="import-area">
-    <p class="hint" style="margin-bottom:6px;">Чтобы все видели одни и те же правки (а не каждый свои в браузере), разверни Google Apps Script как веб-приложение поверх Google Таблицы и вставь сюда его URL. Инструкция и код — в чате отдельным сообщением.</p>
-    <div class="settings-row">
-      <input id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec">
-      <button id="saveApiBtn">Сохранить</button>
-    </div>
-    <div id="syncStatus"></div>
-  </div>
-</details>
+<div id="syncStatus" class="hint" style="margin-bottom: 16px;"></div>
 
 <div class="toolbar">
   <div class="toolbar-left">
@@ -187,12 +177,15 @@
 <p id="empty" style="display:none;">Пока нет правок. Добавьте первую выше.</p>
 
 <script>
+// ==== ВСТАВЬ СВОЮ ССЫЛКУ СЮДА (внутри кавычек), это надёжнее поля в интерфейсе ====
+const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbw1g8Em4AWbRnSfid-P-e0scIXjlJJEaHCOngaChO7cjM6AwGVmooXmG_9hpLQh3Cyblw/exec';
+// ===================================================================================
+
 const STORAGE_KEY = 'pravki_perevodov';
 const API_KEY = 'pravki_api_url';
 let items = [];
 let editingId = null;
-let apiUrl = localStorage.getItem(API_KEY) || '';
-document.getElementById('apiUrl').value = apiUrl;
+let apiUrl = HARDCODED_API_URL || localStorage.getItem(API_KEY) || '';
 
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -204,12 +197,19 @@ async function loadItems() {
     try {
       document.getElementById('syncStatus').textContent = 'Загрузка из общего источника…';
       const res = await fetch(apiUrl);
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        throw new Error('Сервер ответил не JSON-ом (статус ' + res.status + '). Похоже, доступ к развёртыванию не открыт для «Всех» — см. чат. Начало ответа: ' + text.slice(0, 120));
+      }
       items = Array.isArray(data) ? data : [];
       document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
       return;
     } catch (e) {
-      document.getElementById('syncStatus').textContent = 'Не удалось загрузить с сервера, показаны локальные данные.';
+      document.getElementById('syncStatus').textContent = 'Ошибка: ' + e.message;
+      console.error(e);
     }
   }
   try {
@@ -230,17 +230,11 @@ async function saveItems() {
       });
       document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
     } catch (e) {
-      document.getElementById('syncStatus').textContent = 'Не удалось сохранить на сервер (сохранено только локально).';
+      document.getElementById('syncStatus').textContent = 'Не удалось сохранить на сервер: ' + e.message + ' (сохранено только локально).';
+      console.error(e);
     }
   }
 }
-
-document.getElementById('saveApiBtn').addEventListener('click', async () => {
-  apiUrl = document.getElementById('apiUrl').value.trim();
-  localStorage.setItem(API_KEY, apiUrl);
-  await loadItems();
-  render();
-});
 
 // --- Язык / автор: показ поля "свой вариант" ---
 const langSel = document.getElementById('language');
