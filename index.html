@@ -299,7 +299,7 @@ function render() {
             ${authorOptions.map(a => `<option ${it.author===a?'selected':''}>${a}</option>`).join('')}
             <option value="__custom" ${(it.author && !isKnownAuthor)?'selected':''}>Другое имя…</option>
           </select>
-          <input data-field="key" placeholder="Ключ / экран / контекст" value="${esc(it.key)}">
+          <input data-field="key" placeholder="Ключ / контекст" value="${esc(it.key)}">
         </div>
         <input data-field="customAuthor" placeholder="Имя" value="${(it.author && !isKnownAuthor) ? esc(it.author) : ''}" style="display:${(it.author && !isKnownAuthor)?'block':'none'}; margin-bottom:6px;">
         <textarea data-field="oldText" placeholder="Что сейчас">${esc(it.oldText)}</textarea>
