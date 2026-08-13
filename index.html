@@ -97,7 +97,7 @@
 <body>
 
 <h1>Правки переводов</h1>
-<p class="hint">iOS / Android / Веб</p>
+<p class="hint">iOS / Android / Веб, любой язык. Данные хранятся в браузере, либо через общий доступ (см. «Настройки общего доступа» ниже).</p>
 
 <div class="row3">
   <select id="platform">
@@ -120,7 +120,7 @@
     <option value="__custom">Другой…</option>
   </select>
   <select id="author">
-    <option value="">Кто вносит?</option>
+    <option value="">Кто вносит — не выбрано</option>
     <option>Настя</option>
     <option>Диляра</option>
     <option>Соня</option>
@@ -130,7 +130,7 @@
 </div>
 <input id="customLang" placeholder="Свой язык">
 <input id="customAuthor" placeholder="Имя">
-<input id="key" placeholder="Ключ / контекст" style="margin-bottom: 8px;">
+<input id="key" placeholder="Ключ / экран / контекст (необязательно)" style="margin-bottom: 8px;">
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
 <button id="addBtn">+ Добавить правку</button>
@@ -162,7 +162,7 @@
     <select id="filterLanguage">
       <option value="">Все языки</option>
     </select>
-    <select id="filterAuthor"> 
+    <select id="filterAuthor">
       <option value="">Все имена</option>
       <option>Настя</option>
       <option>Диляра</option>
@@ -179,13 +179,14 @@
 <script>
 // ==== ВСТАВЬ СВОЮ ССЫЛКУ СЮДА (внутри кавычек), это надёжнее поля в интерфейсе ====
 const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbw1g8Em4AWbRnSfid-P-e0scIXjlJJEaHCOngaChO7cjM6AwGVmooXmG_9hpLQh3Cyblw/exec';
-// ===================================================================================
+//
 
 const STORAGE_KEY = 'pravki_perevodov';
 const API_KEY = 'pravki_api_url';
 let items = [];
 let editingId = null;
 let apiUrl = HARDCODED_API_URL || localStorage.getItem(API_KEY) || '';
+let serverLoadOk = !apiUrl; // если общего источника нет — считаем "загрузку" успешной (работаем локально)
 
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -205,10 +206,15 @@ async function loadItems() {
         throw new Error('Сервер ответил не JSON-ом (статус ' + res.status + '). Похоже, доступ к развёртыванию не открыт для «Всех» — см. чат. Начало ответа: ' + text.slice(0, 120));
       }
       items = Array.isArray(data) ? data : [];
+      serverLoadOk = true;
       document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
       return;
     } catch (e) {
-      document.getElementById('syncStatus').textContent = 'Ошибка: ' + e.message;
+      serverLoadOk = false;
+      document.getElementById('syncStatus').innerHTML =
+        '⚠️ Не удалось загрузить общие данные (' + esc(e.message) + '). ' +
+        'Показаны только локальные данные этого браузера — <b>изменения сейчас НЕ будут сохраняться в общую таблицу</b>, ' +
+        'чтобы не затереть чужие правки. Обнови страницу или сообщи в чат, чтобы это починили, прежде чем что-то менять.';
       console.error(e);
     }
   }
@@ -220,6 +226,12 @@ async function loadItems() {
 
 async function saveItems() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  if (apiUrl && !serverLoadOk) {
+    // Не даём перезаписать общую таблицу, пока не подтверждена успешная загрузка актуальных данных
+    document.getElementById('syncStatus').innerHTML =
+      '⚠️ Изменение сохранено только локально — общая синхронизация отключена, пока не подгрузятся актуальные данные. Обнови страницу.';
+    return;
+  }
   if (apiUrl) {
     try {
       document.getElementById('syncStatus').textContent = 'Сохранение…';
@@ -230,6 +242,7 @@ async function saveItems() {
       });
       document.getElementById('syncStatus').textContent = 'Синхронизировано ✓';
     } catch (e) {
+      serverLoadOk = false;
       document.getElementById('syncStatus').textContent = 'Не удалось сохранить на сервер: ' + e.message + ' (сохранено только локально).';
       console.error(e);
     }
@@ -299,7 +312,7 @@ function render() {
             ${authorOptions.map(a => `<option ${it.author===a?'selected':''}>${a}</option>`).join('')}
             <option value="__custom" ${(it.author && !isKnownAuthor)?'selected':''}>Другое имя…</option>
           </select>
-          <input data-field="key" placeholder="Ключ / контекст" value="${esc(it.key)}">
+          <input data-field="key" placeholder="Ключ / экран / контекст" value="${esc(it.key)}">
         </div>
         <input data-field="customAuthor" placeholder="Имя" value="${(it.author && !isKnownAuthor) ? esc(it.author) : ''}" style="display:${(it.author && !isKnownAuthor)?'block':'none'}; margin-bottom:6px;">
         <textarea data-field="oldText" placeholder="Что сейчас">${esc(it.oldText)}</textarea>
