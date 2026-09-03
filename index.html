@@ -251,7 +251,7 @@
 </div>
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
-<input id="comment" placeholder="Комментарий (пишем только если надо исправить два ключа/часть строки!)" style="margin-bottom: 8px;">
+<input id="comment" placeholder="Комментарий (необязательно)" style="margin-bottom: 8px;">
 <button id="addBtn">+ Добавить правку</button>
 
 <details>
@@ -273,15 +273,24 @@
     <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
       <div>
         <label class="hint" style="display:block; margin-bottom:4px;">Файл iOS .po</label>
-        <input type="file" id="mergePoIos" accept=".po">
+        <div class="edit-row" style="grid-template-columns: auto 1fr;">
+          <select id="mergeLangIos"></select>
+          <input type="file" id="mergePoIos" accept=".po">
+        </div>
       </div>
       <div>
         <label class="hint" style="display:block; margin-bottom:4px;">Файл Android .po</label>
-        <input type="file" id="mergePoAndroid" accept=".po">
+        <div class="edit-row" style="grid-template-columns: auto 1fr;">
+          <select id="mergeLangAndroid"></select>
+          <input type="file" id="mergePoAndroid" accept=".po">
+        </div>
       </div>
       <div>
         <label class="hint" style="display:block; margin-bottom:4px;">Файл веба .po</label>
-        <input type="file" id="mergePoWeb" accept=".po">
+        <div class="edit-row" style="grid-template-columns: auto 1fr;">
+          <select id="mergeLangWeb"></select>
+          <input type="file" id="mergePoWeb" accept=".po">
+        </div>
       </div>
     </div>
     <div id="mergePoStatus" class="hint" style="margin-top:8px;"></div>
@@ -908,11 +917,11 @@ function mergePo(poText, corrections) {
   return { text: outParts.join('\n\n') + '\n', matchedKeys };
 }
 
-function handlePoUpload(platform, file) {
+function handlePoUpload(platform, language, file) {
   const status = document.getElementById('mergePoStatus');
-  const rows = items.filter(it => it.platform === platform && it.language === 'Английский' && it.status !== 'done');
+  const rows = items.filter(it => it.platform === platform && it.language === language && it.status !== 'done');
   if (rows.length === 0) {
-    status.textContent = `Нет английских правок для платформы ${platform}.`;
+    status.textContent = `Нет правок (${language}) для платформы ${platform}.`;
     return;
   }
   const rowsToMerge = rows.filter(it => !it.comment);
@@ -966,14 +975,21 @@ function handlePoUpload(platform, file) {
 }
 
 document.getElementById('mergePoIos').addEventListener('change', (e) => {
-  if (e.target.files[0]) handlePoUpload('iOS', e.target.files[0]);
+  if (e.target.files[0]) handlePoUpload('iOS', document.getElementById('mergeLangIos').value, e.target.files[0]);
 });
 document.getElementById('mergePoAndroid').addEventListener('change', (e) => {
-  if (e.target.files[0]) handlePoUpload('Android', e.target.files[0]);
+  if (e.target.files[0]) handlePoUpload('Android', document.getElementById('mergeLangAndroid').value, e.target.files[0]);
 });
 document.getElementById('mergePoWeb').addEventListener('change', (e) => {
-  if (e.target.files[0]) handlePoUpload('Веб', e.target.files[0]);
+  if (e.target.files[0]) handlePoUpload('Веб', document.getElementById('mergeLangWeb').value, e.target.files[0]);
 });
+
+(() => {
+  const mergeLangOptions = ['Английский','Армянский','Казахский','Грузинский','Азербайджанский','Узбекский','Амхарский','Киргизский','Таджикский','Русский'];
+  ['mergeLangIos', 'mergeLangAndroid', 'mergeLangWeb'].forEach(id => {
+    document.getElementById(id).innerHTML = mergeLangOptions.map(l => `<option>${l}</option>`).join('');
+  });
+})();
 
 (async () => {
   await loadItems();
