@@ -84,6 +84,7 @@
   .badge.key { background: #f4f0e6; color: #8a6d1f; font-family: monospace; }
   .badge.author { background: #f4c0d1; color: #4b1528; }
   .badge.date { background: #e6e2f7; color: #3c2f6b; }
+  .badge.done-date { background: #e3f5e8; color: #2f9e44; }
   .badge.status-pending { background: #ede7fc; color: #7a3ff0; }
   .badge.status-done { background: #e3f5e8; color: #2f9e44; }
   .actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -353,7 +354,7 @@ function hideThanks() {
 document.getElementById('thanksOverlay').addEventListener('click', hideThanks);
 
 // показываем картинку-благодарность не за каждую правку, а раз в N штук
-const THANKS_EVERY_N = 3;
+const THANKS_EVERY_N = 2;
 const ADD_COUNTER_KEY = 'pravki_add_counter';
 function maybeShowThanks() {
   let n = parseInt(localStorage.getItem(ADD_COUNTER_KEY) || '0', 10) + 1;
@@ -534,6 +535,7 @@ function render() {
           ${it.key ? `<span class="badge key">${esc(it.key)}</span>` : ''}
           ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
           ${it.date ? `<span class="badge date">${formatDate(it.date)}</span>` : ''}
+          ${it.doneDate ? `<span class="badge done-date">✓ ${formatDate(it.doneDate)}</span>` : ''}
           <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
         </div>
         <div class="actions">
@@ -577,6 +579,7 @@ function render() {
         if (it) {
           justFinished = it.status !== 'done';
           it.status = it.status === 'done' ? 'pending' : 'done';
+          it.doneDate = it.status === 'done' ? todayStr() : null;
         }
         await saveItems();
         if (justFinished) showDone();
@@ -671,10 +674,10 @@ document.getElementById('importBtn').addEventListener('click', async () => {
 
 // --- Экспорт в настоящий .xlsx через SheetJS ---
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Дата','Статус']];
-  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', formatDate(i.date) || '', statusLabel(i.status)]));
+  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Дата','Статус','Дата исправления']];
+  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', formatDate(i.date) || '', statusLabel(i.status), formatDate(i.doneDate) || '']));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:12},{wch:10}];
+  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:12},{wch:10},{wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Правки');
   XLSX.writeFile(wb, 'pravki-perevodov.xlsx');
