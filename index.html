@@ -12,17 +12,17 @@
     max-width: 760px;
     margin: 0 auto;
     padding: 24px 16px 60px;
-    background: #f7f6f2;
-    color: #2c2c2a;
+    background: #f6f5fb;
+    color: #141417;
   }
   h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
   h2.section { font-size: 15px; font-weight: 600; margin: 28px 0 8px; }
-  p.hint { color: #6b6a66; font-size: 13px; margin-top: 0; margin-bottom: 20px; }
+  p.hint { color: #8a8a93; font-size: 13px; margin-top: 0; margin-bottom: 20px; }
   .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   select, input, textarea {
     width: 100%;
     padding: 9px 10px;
-    border: 1px solid #d8d6cf;
+    border: 1px solid #e3e1ea;
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
@@ -32,67 +32,146 @@
   #customLang, #customAuthor { display: none; margin-bottom: 8px; }
   button {
     cursor: pointer;
-    border: 1px solid #d8d6cf;
+    border: 1px solid #e3e1ea;
     background: #fff;
     border-radius: 8px;
     padding: 9px 14px;
     font-size: 14px;
     font-family: inherit;
   }
-  button:hover { background: #f0efe9; }
+  button:hover { background: #f1f0f5; }
   button:active { transform: scale(0.98); }
-  #addBtn { width: 100%; margin-bottom: 8px; background: #2c2c2a; color: #fff; border: none; font-weight: 500; }
-  #addBtn:hover { background: #444441; }
-  details { background: #fff; border: 1px solid #e5e3db; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  #addBtn { width: 100%; margin-bottom: 8px; background: #7a3ff0; color: #fff; border: none; font-weight: 500; }
+  #addBtn:hover { background: #6427c9; }
+  details { background: #fff; border: 1px solid #e3e1ea; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
   summary { cursor: pointer; font-size: 14px; font-weight: 500; }
   .import-area { margin-top: 10px; }
   .import-area textarea { min-height: 90px; font-family: monospace; font-size: 12px; }
   .settings-row { display: flex; gap: 8px; margin-top: 8px; }
   .settings-row input { flex: 1; }
   .settings-row button { flex-shrink: 0; }
-  #syncStatus { font-size: 12px; color: #6b6a66; margin-top: 6px; }
+  #syncStatus { font-size: 12px; color: #8a8a93; margin-top: 6px; }
   .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
   .toolbar select { width: auto; height: 34px; padding: 4px 8px; }
   .toolbar button { height: 34px; font-size: 13px; }
   .card {
     background: #fff;
-    border: 1px solid #e5e3db;
-    border-left: 4px solid #d8d6cf;
+    border: 1px solid #e3e1ea;
+    border-left: 4px solid #e3e1ea;
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 8px;
   }
-  .card.status-pending { border-left-color: #ef9f27; }
-  .card.status-done { border-left-color: #639922; }
+  .card.status-pending { border-left-color: #7a3ff0; }
+  .card.status-done { border-left-color: #2f9e44; }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
   .badge {
     font-size: 12px;
     padding: 2px 9px;
     border-radius: 6px;
-    background: #eceae2;
-    color: #5f5e5a;
+    background: #f1f0f5;
+    color: #6b6b76;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
-  .badge.platform { background: #e6f1fb; color: #0c447c; }
+  .badge.platform-ios { background: #e3eefb; color: #1d5fa8; }
+  .badge.platform-android { background: #e5f6df; color: #3f7a1f; }
+  .badge.platform-web { background: #fbe9d9; color: #b5651d; }
+  .badge.language { background: #e9f2f7; color: #2d6a86; }
+  .badge.key { background: #f4f0e6; color: #8a6d1f; font-family: monospace; }
   .badge.author { background: #f4c0d1; color: #4b1528; }
   .badge.date { background: #e6e2f7; color: #3c2f6b; }
-  .badge.status-pending { background: #faeeda; color: #854f0b; }
-  .badge.status-done { background: #eaf3de; color: #27500a; }
+  .badge.status-pending { background: #ede7fc; color: #7a3ff0; }
+  .badge.status-done { background: #e3f5e8; color: #2f9e44; }
   .actions { display: flex; gap: 4px; flex-shrink: 0; }
   .actions button { height: 28px; padding: 0 9px; font-size: 12px; }
   .diff { font-size: 14px; line-height: 1.5; }
-  .diff .old { color: #6b6a66; }
-  .diff .arrow { color: #999790; margin: 0 6px; }
+  .diff .old { color: #8a8a93; }
+  .diff .arrow { color: #a8a2b0; margin: 0 6px; }
   .status-done .diff { opacity: 0.6; text-decoration: line-through; }
-  #empty { color: #999790; font-size: 14px; text-align: center; padding: 20px 0; }
+  #empty { color: #a8a2b0; font-size: 14px; text-align: center; padding: 20px 0; }
   .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
   .edit-row select, .edit-row input { padding: 7px 8px; font-size: 13px; }
   .edit-form textarea { min-height: 44px; font-size: 13px; margin-bottom: 6px; }
   .edit-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
   .edit-actions button { height: 28px; padding: 0 10px; font-size: 12px; }
-  .edit-actions .save-btn { background: #2c2c2a; color: #fff; border: none; }
-  .edit-actions .save-btn:hover { background: #444441; }
+  .edit-actions .save-btn { background: #7a3ff0; color: #fff; border: none; }
+  .edit-actions .save-btn:hover { background: #6427c9; }
+
+  #thanksOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30,29,26,0.55);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  #thanksOverlay.show { display: flex; }
+  #thanksCard {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    animation: thanksPop 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes thanksPop {
+    0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+    55% { transform: scale(1.08) rotate(3deg); opacity: 1; }
+    75% { transform: scale(0.96) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  #thanksCard img {
+    max-width: 100%;
+    max-height: 320px;
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto 10px;
+    object-fit: contain;
+    animation: thanksImgWiggle 1.8s ease-in-out 0.6s;
+  }
+  @keyframes thanksImgWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-2.5deg); }
+    40% { transform: rotate(2deg); }
+    60% { transform: rotate(-1.5deg); }
+    80% { transform: rotate(1deg); }
+  }
+  #thanksCard .thanks-caption {
+    font-size: 15px;
+    font-weight: 600;
+    color: #141417;
+    animation: thanksPop 0.6s cubic-bezier(.34,1.56,.64,1) 0.08s backwards;
+  }
+  #thanksCard .thanks-hint {
+    font-size: 12px;
+    color: #a8a2b0;
+    margin-top: 6px;
+  }
+  .confetti-piece {
+    position: fixed;
+    top: -40px;
+    font-size: 22px;
+    z-index: 1000;
+    pointer-events: none;
+    animation-name: confettiFall;
+    animation-timing-function: cubic-bezier(.25,.46,.45,.94);
+    animation-fill-mode: forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(var(--spin, 360deg)); opacity: 0.15; }
+  }
 </style>
 </head>
 <body>
@@ -183,6 +262,14 @@
 <div id="list"></div>
 <p id="empty" style="display:none;">Пока нет правок. Добавьте первую выше.</p>
 
+<div id="thanksOverlay">
+  <div id="thanksCard">
+    <img id="thanksImg" src="" alt="Спасибо за правку">
+    <div class="thanks-caption" id="thanksCaption"></div>
+    <div class="thanks-hint">нажми, чтобы закрыть</div>
+  </div>
+</div>
+
 <script>
 // ==== ВСТАВЬ СВОЮ ССЫЛКУ СЮДА (внутри кавычек), это надёжнее поля в интерфейсе ====
 const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbw1g8Em4AWbRnSfid-P-e0scIXjlJJEaHCOngaChO7cjM6AwGVmooXmG_9hpLQh3Cyblw/exec';
@@ -218,6 +305,79 @@ function monthLabel(ym) {
 }
 
 document.getElementById('date').value = todayStr();
+
+// --- Всплывашка-благодарность при добавлении правки ---
+const THANKS_ITEMS = [
+  { src: 'assets/thanks-01.webp', caption: 'Спасибо за работу!' },
+  { src: 'assets/thanks-02.jpg', caption: 'Спасибо, коллега!' },
+  { src: 'assets/thanks-03.jpg', caption: 'Огромное спасибо нашим классным сотрудникам!' },
+  { src: 'assets/thanks-04.jpg', caption: 'Спасибо! :)' },
+  { src: 'assets/thanks-05.jpg', caption: 'Коллеги, спасииибо!' },
+  { src: 'assets/thanks-06.jpg', caption: 'Спасибо за работу!' },
+  { src: 'assets/thanks-07.gif', caption: 'Большое сердечное спасибо' },
+  { src: 'assets/thanks-08.jpg', caption: 'Good job! Well done!' },
+  { src: 'assets/thanks-09.webp', caption: 'Очень необычно, зайка' }
+];
+let thanksTimer = null;
+function spawnConfetti() {
+  const emojis = ['🎉','✨','🥳','👏','🌟','💫'];
+  const count = 16;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.3) + 's';
+    piece.style.setProperty('--spin', (Math.random() > 0.5 ? 360 : -360) + 'deg');
+    piece.style.fontSize = (16 + Math.random() * 14) + 'px';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 3200);
+  }
+}
+
+function showThanks() {
+  const pick = THANKS_ITEMS[Math.floor(Math.random() * THANKS_ITEMS.length)];
+  document.getElementById('thanksImg').src = pick.src;
+  document.getElementById('thanksCaption').textContent = pick.caption;
+  const overlay = document.getElementById('thanksOverlay');
+  overlay.classList.add('show');
+  spawnConfetti();
+  clearTimeout(thanksTimer);
+  thanksTimer = setTimeout(hideThanks, 2800);
+}
+function hideThanks() {
+  document.getElementById('thanksOverlay').classList.remove('show');
+  clearTimeout(thanksTimer);
+}
+document.getElementById('thanksOverlay').addEventListener('click', hideThanks);
+
+// показываем картинку-благодарность не за каждую правку, а раз в N штук
+const THANKS_EVERY_N = 3;
+const ADD_COUNTER_KEY = 'pravki_add_counter';
+function maybeShowThanks() {
+  let n = parseInt(localStorage.getItem(ADD_COUNTER_KEY) || '0', 10) + 1;
+  if (n >= THANKS_EVERY_N) {
+    n = 0;
+    showThanks();
+  }
+  localStorage.setItem(ADD_COUNTER_KEY, String(n));
+}
+
+// --- Всплывашка при отметке "Готово" ---
+const DONE_ITEMS = [
+  { src: 'assets/done-01.gif', caption: 'Готово! 👋' }
+];
+function showDone() {
+  const pick = DONE_ITEMS[Math.floor(Math.random() * DONE_ITEMS.length)];
+  document.getElementById('thanksImg').src = pick.src;
+  document.getElementById('thanksCaption').textContent = pick.caption;
+  const overlay = document.getElementById('thanksOverlay');
+  overlay.classList.add('show');
+  spawnConfetti();
+  clearTimeout(thanksTimer);
+  thanksTimer = setTimeout(hideThanks, 2800);
+}
 
 // --- Загрузка / сохранение (локально или через общий Apps Script backend) ---
 async function loadItems() {
@@ -364,13 +524,14 @@ function render() {
       </div>`;
     }
     const statusClass = it.status === 'done' ? 'status-done' : 'status-pending';
+    const platformClass = it.platform === 'iOS' ? 'platform-ios' : it.platform === 'Android' ? 'platform-android' : 'platform-web';
     return `
     <div class="card ${statusClass}">
       <div class="card-top">
         <div class="badges">
-          <span class="badge platform">${esc(it.platform)}</span>
-          <span class="badge">${esc(it.language)}</span>
-          ${it.key ? `<span class="badge">${esc(it.key)}</span>` : ''}
+          <span class="badge platform ${platformClass}">${esc(it.platform)}</span>
+          <span class="badge language">${esc(it.language)}</span>
+          ${it.key ? `<span class="badge key">${esc(it.key)}</span>` : ''}
           ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
           ${it.date ? `<span class="badge date">${formatDate(it.date)}</span>` : ''}
           <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
@@ -412,8 +573,13 @@ function render() {
         }
       } else if (act === 'toggle') {
         const it = items.find(i => i.id === id);
-        if (it) it.status = it.status === 'done' ? 'pending' : 'done';
+        let justFinished = false;
+        if (it) {
+          justFinished = it.status !== 'done';
+          it.status = it.status === 'done' ? 'pending' : 'done';
+        }
         await saveItems();
+        if (justFinished) showDone();
       } else if (act === 'edit') {
         editingId = id;
       } else if (act === 'cancel') {
@@ -464,6 +630,7 @@ document.getElementById('addBtn').addEventListener('click', async () => {
   document.getElementById('date').value = todayStr();
   await saveItems();
   render();
+  maybeShowThanks();
 });
 
 document.getElementById('filterPlatform').addEventListener('change', render);
