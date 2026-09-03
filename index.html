@@ -76,6 +76,7 @@
   }
   .badge.platform { background: #e6f1fb; color: #0c447c; }
   .badge.author { background: #f4c0d1; color: #4b1528; }
+  .badge.date { background: #e6e2f7; color: #3c2f6b; }
   .badge.status-pending { background: #faeeda; color: #854f0b; }
   .badge.status-done { background: #eaf3de; color: #27500a; }
   .actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -130,7 +131,10 @@
 </div>
 <input id="customLang" placeholder="Свой язык">
 <input id="customAuthor" placeholder="Имя">
-<input id="key" placeholder="Ключ / контекст" style="margin-bottom: 8px;">
+<div class="edit-row" style="margin-bottom: 8px;">
+  <input id="key" placeholder="Ключ / контекст">
+  <input id="date" type="date">
+</div>
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
 <button id="addBtn">+ Добавить правку</button>
@@ -138,7 +142,7 @@
 <details>
   <summary>Импорт из таблицы (Excel / Google Sheets)</summary>
   <div class="import-area">
-    <p class="hint" style="margin-bottom:6px;">Скопируй строки из таблицы (Excel/Sheets) с колонками в порядке: Платформа, Язык, Ключ, Было, Стало, Автор — и вставь сюда. Первая строка может быть заголовком, она пропускается автоматически.</p>
+    <p class="hint" style="margin-bottom:6px;">Скопируй строки из таблицы (Excel/Sheets) с колонками в порядке: Платформа, Язык, Ключ, Было, Стало, Автор, Дата (ГГГГ-ММ-ДД, необязательно) — и вставь сюда. Первая строка может быть заголовком, она пропускается автоматически. Если дату не указать — подставится сегодняшняя.</p>
     <textarea id="importText" placeholder="iOS	Русский	home.title	Старый текст	Новый текст	Настя"></textarea>
     <button id="importBtn">Импортировать строки</button>
   </div>
@@ -161,6 +165,9 @@
     </select>
     <select id="filterLanguage">
       <option value="">Все языки</option>
+    </select>
+    <select id="filterMonth">
+      <option value="">Все месяцы</option>
     </select>
     <select id="filterAuthor">
       <option value="">Все имена</option>
@@ -191,6 +198,26 @@ let serverLoadOk = !apiUrl; // если общего источника нет �
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function formatDate(s) {
+  if (!s) return '';
+  const parts = s.split('-');
+  if (parts.length !== 3) return s;
+  return parts[2] + '.' + parts[1] + '.' + parts[0];
+}
+
+function monthLabel(ym) {
+  const [y, m] = ym.split('-');
+  const names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return names[parseInt(m, 10) - 1] + ' ' + y;
+}
+
+document.getElementById('date').value = todayStr();
 
 // --- Загрузка / сохранение (локально или через общий Apps Script backend) ---
 async function loadItems() {
@@ -268,20 +295,30 @@ function populateLanguageFilter() {
   sel.innerHTML = '<option value="">Все языки</option>' + langs.map(l => `<option ${l===current?'selected':''}>${esc(l)}</option>`).join('');
 }
 
+function populateMonthFilter() {
+  const sel = document.getElementById('filterMonth');
+  const current = sel.value;
+  const months = [...new Set(items.filter(i => i.date).map(i => i.date.slice(0, 7)))].sort().reverse();
+  sel.innerHTML = '<option value="">Все месяцы</option>' + months.map(m => `<option value="${m}" ${m===current?'selected':''}>${monthLabel(m)}</option>`).join('');
+}
+
 function statusLabel(s) { return s === 'done' ? 'Готово' : 'Ожидает'; }
 
 function render() {
   populateLanguageFilter();
+  populateMonthFilter();
   const fp = document.getElementById('filterPlatform').value;
   const fs = document.getElementById('filterStatus').value;
   const fl = document.getElementById('filterLanguage').value;
   const fa = document.getElementById('filterAuthor').value;
+  const fm = document.getElementById('filterMonth').value;
   const list = document.getElementById('list');
   const filtered = items.filter(it =>
     (!fp || it.platform === fp) &&
     (!fs || it.status === fs) &&
     (!fl || it.language === fl) &&
-    (!fa || it.author === fa)
+    (!fa || it.author === fa) &&
+    (!fm || (it.date && it.date.slice(0, 7) === fm))
   );
   document.getElementById('empty').style.display = items.length === 0 ? 'block' : 'none';
 
@@ -314,6 +351,9 @@ function render() {
           </select>
           <input data-field="key" placeholder="Ключ / экран / контекст" value="${esc(it.key)}">
         </div>
+        <div class="edit-row">
+          <input data-field="date" type="date" value="${esc(it.date || '')}">
+        </div>
         <input data-field="customAuthor" placeholder="Имя" value="${(it.author && !isKnownAuthor) ? esc(it.author) : ''}" style="display:${(it.author && !isKnownAuthor)?'block':'none'}; margin-bottom:6px;">
         <textarea data-field="oldText" placeholder="Что сейчас">${esc(it.oldText)}</textarea>
         <textarea data-field="newText" placeholder="На что исправить">${esc(it.newText)}</textarea>
@@ -332,6 +372,7 @@ function render() {
           <span class="badge">${esc(it.language)}</span>
           ${it.key ? `<span class="badge">${esc(it.key)}</span>` : ''}
           ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
+          ${it.date ? `<span class="badge date">${formatDate(it.date)}</span>` : ''}
           <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
         </div>
         <div class="actions">
@@ -389,6 +430,7 @@ function render() {
           it.language = langSelEl.value === '__custom' ? (customLangVal || 'Другой') : langSelEl.value;
           it.author = authorSelEl.value === '__custom' ? customAuthorVal : authorSelEl.value;
           it.key = card.querySelector('[data-field="key"]').value.trim();
+          it.date = card.querySelector('[data-field="date"]').value || it.date;
           it.oldText = card.querySelector('[data-field="oldText"]').value.trim();
           it.newText = card.querySelector('[data-field="newText"]').value.trim();
         }
@@ -412,12 +454,14 @@ document.getElementById('addBtn').addEventListener('click', async () => {
     language: lang,
     author: author,
     key: document.getElementById('key').value.trim(),
+    date: document.getElementById('date').value || todayStr(),
     oldText, newText,
     status: 'pending'
   });
   document.getElementById('key').value = '';
   document.getElementById('oldText').value = '';
   document.getElementById('newText').value = '';
+  document.getElementById('date').value = todayStr();
   await saveItems();
   render();
 });
@@ -426,6 +470,7 @@ document.getElementById('filterPlatform').addEventListener('change', render);
 document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterLanguage').addEventListener('change', render);
 document.getElementById('filterAuthor').addEventListener('change', render);
+document.getElementById('filterMonth').addEventListener('change', render);
 
 // --- Импорт из вставленной таблицы (tab-separated, как при копировании из Excel/Sheets) ---
 document.getElementById('importBtn').addEventListener('click', async () => {
@@ -435,7 +480,7 @@ document.getElementById('importBtn').addEventListener('click', async () => {
   let added = 0;
   lines.forEach((line, idx) => {
     const cols = line.split('\t');
-    const [platform, language, key, oldText, newText, author] = cols;
+    const [platform, language, key, oldText, newText, author, dateCol] = cols;
     if (idx === 0 && /платформ/i.test(platform || '')) return; // пропускаем заголовок
     if (!platform || !language) return;
     items.push({
@@ -446,6 +491,7 @@ document.getElementById('importBtn').addEventListener('click', async () => {
       oldText: (oldText || '').trim(),
       newText: (newText || '').trim(),
       author: (author || '').trim(),
+      date: (dateCol || '').trim() || todayStr(),
       status: 'pending'
     });
     added++;
@@ -458,10 +504,10 @@ document.getElementById('importBtn').addEventListener('click', async () => {
 
 // --- Экспорт в настоящий .xlsx через SheetJS ---
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Статус']];
-  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', statusLabel(i.status)]));
+  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Дата','Статус']];
+  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', formatDate(i.date) || '', statusLabel(i.status)]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:10}];
+  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:12},{wch:10}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Правки');
   XLSX.writeFile(wb, 'pravki-perevodov.xlsx');
