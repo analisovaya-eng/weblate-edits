@@ -251,7 +251,7 @@
 </div>
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
-<input id="comment" placeholder="Комментарий (только если нужно поменять часть строчки/два ключа!)" style="margin-bottom: 8px;">
+<input id="comment" placeholder="Комментарий (необязательно)" style="margin-bottom: 8px;">
 <button id="addBtn">+ Добавить правку</button>
 
 <details>
@@ -316,6 +316,10 @@
       <option>Диляра</option>
       <option>Соня</option>
       <option>Вика</option>
+    </select>
+    <select id="sortOrder">
+      <option value="new">Сначала новые</option>
+      <option value="old">Сначала старые</option>
     </select>
   </div>
   <div class="toolbar-left">
@@ -582,7 +586,12 @@ function render() {
   const langOptions = ['Русский','Английский','Азербайджанский','Амхарский','Армянский','Грузинский','Казахский','Киргизский','Таджикский','Узбекский','Суахили'];
   const authorOptions = ['Настя','Диляра','Соня','Вика'];
 
-  list.innerHTML = filtered.slice().reverse().map(it => {
+  const sortOrder = document.getElementById('sortOrder').value;
+  const sorted = filtered.slice().sort((a, b) => {
+    const cmp = (a.date || '').localeCompare(b.date || '');
+    return sortOrder === 'old' ? cmp : -cmp;
+  });
+  list.innerHTML = sorted.map(it => {
     if (editingId === it.id) {
       const isKnownLang = langOptions.includes(it.language);
       const isKnownAuthor = authorOptions.includes(it.author);
@@ -753,6 +762,7 @@ document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterLanguage').addEventListener('change', render);
 document.getElementById('filterAuthor').addEventListener('change', render);
 document.getElementById('filterMonth').addEventListener('change', render);
+document.getElementById('sortOrder').addEventListener('change', render);
 
 // --- Импорт из вставленной таблицы (tab-separated, как при копировании из Excel/Sheets) ---
 document.getElementById('importBtn').addEventListener('click', async () => {
