@@ -65,8 +65,28 @@
     margin-bottom: 8px;
   }
   .card.status-pending { border-left-color: #7a3ff0; }
+  .card.status-ready { border-left-color: #0f766e; }
   .card.status-done { border-left-color: #2f9e44; }
   .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .card-select { display: flex; align-items: flex-start; gap: 8px; }
+  .card-select input[type="checkbox"] { width: auto; margin-top: 3px; flex-shrink: 0; cursor: pointer; }
+  #bulkBar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #f1f0f5;
+    border: 1px solid #e3e1ea;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  #bulkBar.show { display: flex; }
+  #bulkBar .bulk-actions { display: flex; gap: 6px; }
+  #bulkBar button { height: 30px; padding: 0 10px; font-size: 12px; }
+  #bulkBar .bulk-done { background: #7a3ff0; color: #fff; border: none; }
+  #bulkBar .bulk-done:hover { background: #6427c9; }
   .badges { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
   .badge {
     font-size: 12px;
@@ -87,12 +107,25 @@
   .badge.date { background: #e6e2f7; color: #3c2f6b; }
   .badge.done-date { background: #e3f5e8; color: #2f9e44; }
   .badge.status-pending { background: #ede7fc; color: #7a3ff0; }
+  .badge.status-ready { background: #dff5f3; color: #0f766e; }
   .badge.status-done { background: #e3f5e8; color: #2f9e44; }
   .actions { display: flex; gap: 4px; flex-shrink: 0; }
   .actions button { height: 28px; padding: 0 9px; font-size: 12px; }
   .diff { font-size: 14px; line-height: 1.5; }
   .diff .old { color: #8a8a93; }
   .diff .arrow { color: #a8a2b0; margin: 0 6px; }
+  .comment-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 6px 9px;
+    background: #fbe9d9;
+    color: #8a5a1f;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
   .status-done .diff { opacity: 0.6; text-decoration: line-through; }
   #empty { color: #a8a2b0; font-size: 14px; text-align: center; padding: 20px 0; }
   .edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
@@ -202,7 +235,7 @@
     <option value="__custom">Другой…</option>
   </select>
   <select id="author">
-    <option value="">Кто вносит — не выбрано</option>
+    <option value="">Кто вносит?</option>
     <option>Настя</option>
     <option>Диляра</option>
     <option>Соня</option>
@@ -214,10 +247,11 @@
 <input id="customAuthor" placeholder="Имя">
 <div class="edit-row" style="margin-bottom: 8px;">
   <input id="key" placeholder="Ключ / контекст">
-  <input id="date" type="date">
+  <input id="date" type="date" title="Дата внесения">
 </div>
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
+<input id="comment" placeholder="Комментарий (необязательно)" style="margin-bottom: 8px;">
 <button id="addBtn">+ Добавить правку</button>
 
 <details>
@@ -226,6 +260,31 @@
     <p class="hint" style="margin-bottom:6px;">Скопируй строки из таблицы (Excel/Sheets) с колонками в порядке: Платформа, Язык, Ключ, Было, Стало, Автор, Дата (ГГГГ-ММ-ДД, необязательно) — и вставь сюда. Первая строка может быть заголовком, она пропускается автоматически. Если дату не указать — подставится сегодняшняя.</p>
     <textarea id="importText" placeholder="iOS	Русский	home.title	Старый текст	Новый текст	Настя"></textarea>
     <button id="importBtn">Импортировать строки</button>
+  </div>
+</details>
+
+<details>
+  <summary>Обновить .po из Weblate</summary>
+  <div class="import-area">
+    <details style="margin-bottom:8px;">
+      <summary class="hint" style="font-weight: 500;">Как это работает?</summary>
+      <p class="hint" style="margin-top:6px;">Качаем свежий .po для нужной платформы с нужным языком прямо из Weblate (со всеми строками), грузим его сюда и инструмент возьмёт только правки со статусом «Ожидает», найдёт совпадающие по ключу (msgctxt) строки, подставит в них новый текст (msgstr) и оставит настоящий msgid как есть. Скачается файл только с изменившимися строками, его мы и грузим обратно в Weblate. Найденные строки получат статус «Готово к загрузке». После того как сами загрузим файл в Weblate и убедимся, что всё прошло успешно, выделяем нужные карточки и отмечаем их «Исправлено» через панель массовых действий. Строчки, которые не найдутся, будут написаны отдельным списком, и их придётся править вручную. Правки с комментарием в автозамену не попадают — их тоже правим вручную.</p>
+    </details>
+    <div class="settings-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+      <div>
+        <label class="hint" style="display:block; margin-bottom:4px;">Файл iOS .po</label>
+        <input type="file" id="mergePoIos" accept=".po">
+      </div>
+      <div>
+        <label class="hint" style="display:block; margin-bottom:4px;">Файл Android .po</label>
+        <input type="file" id="mergePoAndroid" accept=".po">
+      </div>
+      <div>
+        <label class="hint" style="display:block; margin-bottom:4px;">Файл веба .po</label>
+        <input type="file" id="mergePoWeb" accept=".po">
+      </div>
+    </div>
+    <div id="mergePoStatus" class="hint" style="margin-top:8px;"></div>
   </div>
 </details>
 
@@ -242,7 +301,8 @@
     <select id="filterStatus">
       <option value="">Все статусы</option>
       <option value="pending">Ожидает</option>
-      <option value="done">Готово</option>
+      <option value="ready">Готово к загрузке</option>
+      <option value="done">Исправлено</option>
     </select>
     <select id="filterLanguage">
       <option value="">Все языки</option>
@@ -258,9 +318,19 @@
       <option>Вика</option>
     </select>
   </div>
-  <button id="exportBtn">⭳ Экспорт в Excel</button>
+  <div class="toolbar-left">
+    <button id="selectAllBtn">☑ Выделить всё</button>
+    <button id="exportBtn">⭳ Экспорт в Excel</button>
+  </div>
 </div>
 
+<div id="bulkBar">
+  <span id="bulkCount"></span>
+  <div class="bulk-actions">
+    <button id="bulkDone" class="bulk-done">✓ Отметить исправлено</button>
+    <button id="bulkClear">Снять выделение</button>
+  </div>
+</div>
 <div id="list"></div>
 <p id="empty" style="display:none;">Пока нет правок. Добавьте первую выше.</p>
 
@@ -281,6 +351,7 @@ const STORAGE_KEY = 'pravki_perevodov';
 const API_KEY = 'pravki_api_url';
 let items = [];
 let editingId = null;
+let selectedIds = new Set();
 let apiUrl = HARDCODED_API_URL || localStorage.getItem(API_KEY) || '';
 let serverLoadOk = !apiUrl; // если общего источника нет — считаем "загрузку" успешной (работаем локально)
 
@@ -449,24 +520,63 @@ function populateMonthFilter() {
   sel.innerHTML = '<option value="">Все месяцы</option>' + months.map(m => `<option value="${m}" ${m===current?'selected':''}>${monthLabel(m)}</option>`).join('');
 }
 
-function statusLabel(s) { return s === 'done' ? 'Готово' : 'Ожидает'; }
+function statusLabel(s) { return s === 'done' ? 'Исправлено' : s === 'ready' ? 'Готово к загрузке' : 'Ожидает'; }
 
-function render() {
-  populateLanguageFilter();
-  populateMonthFilter();
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const count = selectedIds.size;
+  if (count === 0) {
+    bar.classList.remove('show');
+    return;
+  }
+  bar.classList.add('show');
+  document.getElementById('bulkCount').textContent = `Выбрано: ${count}`;
+}
+
+document.getElementById('bulkDone').addEventListener('click', async () => {
+  let changed = false;
+  items.forEach(it => {
+    if (selectedIds.has(it.id) && it.status !== 'done') {
+      it.status = 'done';
+      it.doneDate = todayStr();
+      changed = true;
+    }
+  });
+  selectedIds.clear();
+  if (changed) await saveItems();
+  render();
+});
+
+document.getElementById('bulkClear').addEventListener('click', () => {
+  selectedIds.clear();
+  render();
+});
+
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  getFilteredItems().forEach(it => selectedIds.add(it.id));
+  render();
+});
+
+function getFilteredItems() {
   const fp = document.getElementById('filterPlatform').value;
   const fs = document.getElementById('filterStatus').value;
   const fl = document.getElementById('filterLanguage').value;
   const fa = document.getElementById('filterAuthor').value;
   const fm = document.getElementById('filterMonth').value;
-  const list = document.getElementById('list');
-  const filtered = items.filter(it =>
+  return items.filter(it =>
     (!fp || it.platform === fp) &&
     (!fs || it.status === fs) &&
     (!fl || it.language === fl) &&
     (!fa || it.author === fa) &&
     (!fm || (it.date && it.date.slice(0, 7) === fm))
   );
+}
+
+function render() {
+  populateLanguageFilter();
+  populateMonthFilter();
+  const list = document.getElementById('list');
+  const filtered = getFilteredItems();
   document.getElementById('empty').style.display = items.length === 0 ? 'block' : 'none';
 
   const langOptions = ['Русский','Английский','Азербайджанский','Амхарский','Армянский','Грузинский','Казахский','Киргизский','Таджикский','Узбекский','Суахили'];
@@ -492,50 +602,66 @@ function render() {
         <input data-field="customLang" placeholder="Свой язык" value="${!isKnownLang ? esc(it.language) : ''}" style="display:${!isKnownLang?'block':'none'}; margin-bottom:6px;">
         <div class="edit-row">
           <select data-field="author">
-            <option value="">Кто вносит — не выбрано</option>
+            <option value="">Кто вносит?</option>
             ${authorOptions.map(a => `<option ${it.author===a?'selected':''}>${a}</option>`).join('')}
             <option value="__custom" ${(it.author && !isKnownAuthor)?'selected':''}>Другое имя…</option>
           </select>
           <input data-field="key" placeholder="Ключ / экран / контекст" value="${esc(it.key)}">
         </div>
         <div class="edit-row">
-          <input data-field="date" type="date" value="${esc(it.date || '')}">
+          <input data-field="date" type="date" title="Дата внесения" value="${esc(it.date || '')}">
         </div>
         <input data-field="customAuthor" placeholder="Имя" value="${(it.author && !isKnownAuthor) ? esc(it.author) : ''}" style="display:${(it.author && !isKnownAuthor)?'block':'none'}; margin-bottom:6px;">
         <textarea data-field="oldText" placeholder="Что сейчас">${esc(it.oldText)}</textarea>
         <textarea data-field="newText" placeholder="На что исправить">${esc(it.newText)}</textarea>
+        <input data-field="comment" placeholder="Комментарий (необязательно)" value="${esc(it.comment || '')}" style="margin-bottom: 6px;">
         <div class="edit-actions">
           <button data-act="cancel" data-id="${it.id}">Отмена</button>
           <button data-act="save" data-id="${it.id}" class="save-btn">Сохранить</button>
         </div>
       </div>`;
     }
-    const statusClass = it.status === 'done' ? 'status-done' : 'status-pending';
+    const statusClass = it.status === 'done' ? 'status-done' : it.status === 'ready' ? 'status-ready' : 'status-pending';
     const platformClass = it.platform === 'iOS' ? 'platform-ios' : it.platform === 'Android' ? 'platform-android' : 'platform-web';
+    const checked = selectedIds.has(it.id) ? 'checked' : '';
     return `
     <div class="card ${statusClass}">
       <div class="card-top">
-        <div class="badges">
-          <span class="badge platform ${platformClass}">${esc(it.platform)}</span>
-          <span class="badge language">${esc(it.language)}</span>
-          ${it.key ? `<span class="badge key">${esc(it.key)}</span>` : ''}
-          ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
-          ${it.date ? `<span class="badge date">${formatDate(it.date)}</span>` : ''}
-          ${it.doneDate ? `<span class="badge done-date">✓ ${formatDate(it.doneDate)}</span>` : ''}
-          <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
+        <div class="card-select">
+          <input type="checkbox" data-select="${it.id}" ${checked}>
+          <div class="badges">
+            <span class="badge platform ${platformClass}">${esc(it.platform)}</span>
+            <span class="badge language">${esc(it.language)}</span>
+            ${it.key ? `<span class="badge key">${esc(it.key)}</span>` : ''}
+            ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
+            ${it.date ? `<span class="badge date" title="Дата внесения">${formatDate(it.date)}</span>` : ''}
+            ${it.doneDate ? `<span class="badge done-date">✓ ${formatDate(it.doneDate)}</span>` : ''}
+            <span class="badge ${statusClass}">${statusLabel(it.status)}</span>
+          </div>
         </div>
         <div class="actions">
           <button data-act="edit" data-id="${it.id}">✎</button>
-          <button data-act="toggle" data-id="${it.id}">${it.status === 'done' ? '↺ Вернуть' : '✓ Готово'}</button>
+          <button data-act="toggle" data-id="${it.id}">${it.status === 'done' ? '↺ Вернуть' : '✓ Исправлено'}</button>
           <button data-act="del" data-id="${it.id}">✕</button>
         </div>
       </div>
       <div class="diff">
         <span class="old">${esc(it.oldText)}</span><span class="arrow">→</span><span>${esc(it.newText)}</span>
       </div>
+      ${it.comment ? `<div class="comment-note">💬 ${esc(it.comment)}</div>` : ''}
     </div>
   `;
   }).join('');
+
+  list.querySelectorAll('[data-select]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.dataset.select;
+      if (e.target.checked) selectedIds.add(id);
+      else selectedIds.delete(id);
+      updateBulkBar();
+    });
+  });
+  updateBulkBar();
 
   list.querySelectorAll('[data-field="language"]').forEach(sel => {
     sel.addEventListener('change', (e) => {
@@ -585,6 +711,7 @@ function render() {
           it.date = card.querySelector('[data-field="date"]').value || it.date;
           it.oldText = card.querySelector('[data-field="oldText"]').value.trim();
           it.newText = card.querySelector('[data-field="newText"]').value.trim();
+          it.comment = card.querySelector('[data-field="comment"]').value.trim();
         }
         editingId = null;
         await saveItems();
@@ -608,11 +735,13 @@ document.getElementById('addBtn').addEventListener('click', async () => {
     key: document.getElementById('key').value.trim(),
     date: document.getElementById('date').value || todayStr(),
     oldText, newText,
+    comment: document.getElementById('comment').value.trim(),
     status: 'pending'
   });
   document.getElementById('key').value = '';
   document.getElementById('oldText').value = '';
   document.getElementById('newText').value = '';
+  document.getElementById('comment').value = '';
   document.getElementById('date').value = todayStr();
   await saveItems();
   render();
@@ -657,13 +786,193 @@ document.getElementById('importBtn').addEventListener('click', async () => {
 
 // --- Экспорт в настоящий .xlsx через SheetJS ---
 document.getElementById('exportBtn').addEventListener('click', () => {
-  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Дата','Статус','Дата исправления']];
-  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', formatDate(i.date) || '', statusLabel(i.status), formatDate(i.doneDate) || '']));
+  const rows = [['Платформа','Язык','Ключ','Было','Стало','Автор','Дата внесения','Статус','Дата исправления','Комментарий']];
+  items.forEach(i => rows.push([i.platform, i.language, i.key, i.oldText, i.newText, i.author || '', formatDate(i.date) || '', statusLabel(i.status), formatDate(i.doneDate) || '', i.comment || '']));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:12},{wch:10},{wch:14}];
+  ws['!cols'] = [{wch:10},{wch:14},{wch:18},{wch:30},{wch:30},{wch:12},{wch:12},{wch:10},{wch:14},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Правки');
   XLSX.writeFile(wb, 'pravki-perevodov.xlsx');
+});
+
+// --- Обновление реального .po из Weblate (только английский) ---
+function poEscape(s) {
+  return (s || '')
+    // в трекере "\\" (двойной слэш) — это ручная пометка неразрывного пробела;
+    // Weblate ждёт настоящий невидимый символ (U+00A0), а не текст "<0xa0>"
+    .replace(/\\\\/g, '\u00A0')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n');
+}
+
+function poUnescape(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '\\' && i + 1 < s.length) {
+      const next = s[i + 1];
+      if (next === 'n') { out += '\n'; i++; }
+      else if (next === 't') { out += '\t'; i++; }
+      else if (next === '"') { out += '"'; i++; }
+      else if (next === '\\') { out += '\\'; i++; }
+      else { out += s[i]; }
+    } else {
+      out += s[i];
+    }
+  }
+  return out;
+}
+
+function extractQuoted(line) {
+  const first = line.indexOf('"');
+  const last = line.lastIndexOf('"');
+  if (first === -1 || last === -1 || last <= first) return '';
+  return line.slice(first + 1, last);
+}
+
+// Разбирает .po на записи (заголовок + отдельные строки перевода).
+// Возвращает заголовок (msgid "" ... msgstr "...") отдельно и массив записей,
+// у каждой — комментарии, исходные строки msgctxt/msgid (не трогаем) и msgstr.
+function parsePoEntries(poText) {
+  const lines = poText.split(/\r\n|\n/);
+  const n = lines.length;
+  let i = 0;
+  let header = null;
+  const entries = [];
+
+  while (i < n) {
+    // пропускаем пустые строки между записями
+    while (i < n && lines[i].trim() === '') i++;
+    if (i >= n) break;
+
+    const entryStart = i;
+    // комментарии (#, #. #: #, и т.д.)
+    while (i < n && /^\s*#/.test(lines[i])) i++;
+
+    let ctx = null;
+    let ctxEnd = i;
+    if (i < n && /^msgctxt\s+"/.test(lines[i].trim())) {
+      const block = [lines[i]];
+      let j = i + 1;
+      while (j < n && /^\s*"/.test(lines[j])) { block.push(lines[j]); j++; }
+      ctx = poUnescape(block.map(extractQuoted).join(''));
+      ctxEnd = j;
+      i = j;
+    }
+
+    // msgid (+ возможные msgid_plural / msgstr[n] — просто пропускаем их как есть)
+    let msgstrLineIdx = -1;
+    let msgstrEnd = i;
+    while (i < n && lines[i].trim() !== '') {
+      if (/^msgstr(\[\d+\])?\s+"/.test(lines[i].trim()) && msgstrLineIdx === -1) {
+        msgstrLineIdx = i;
+      }
+      i++;
+    }
+    msgstrEnd = i;
+    const entryEnd = i;
+
+    const rawLines = lines.slice(entryStart, entryEnd);
+
+    if (ctx === null && msgstrLineIdx === entryStart) {
+      // это заголовочная запись (msgid "" / msgstr "...")
+      header = rawLines.join('\n');
+    } else if (ctx !== null) {
+      entries.push({ ctx, rawLines, msgstrLineIdx, entryStart });
+    }
+  }
+
+  return { header, entries };
+}
+
+// Собирает файл только из тех записей, чей ключ (msgctxt) есть в правках —
+// msgid берётся настоящий (из загруженного файла), msgstr — новый.
+function mergePo(poText, corrections) {
+  const { header, entries } = parsePoEntries(poText);
+  const matchedKeys = new Set();
+  const outParts = [];
+  if (header) outParts.push(header);
+
+  entries.forEach(entry => {
+    if (!Object.prototype.hasOwnProperty.call(corrections, entry.ctx)) return;
+    matchedKeys.add(entry.ctx);
+    const offset = entry.msgstrLineIdx - entry.entryStart;
+    const newLines = entry.rawLines.slice();
+    // найти конец многострочного msgstr в исходных строках и заменить одной новой строкой
+    let end = offset + 1;
+    while (end < newLines.length && /^\s*"/.test(newLines[end])) end++;
+    newLines.splice(offset, end - offset, `msgstr "${poEscape(corrections[entry.ctx])}"`);
+    outParts.push(newLines.join('\n'));
+  });
+
+  return { text: outParts.join('\n\n') + '\n', matchedKeys };
+}
+
+function handlePoUpload(platform, file) {
+  const status = document.getElementById('mergePoStatus');
+  const rows = items.filter(it => it.platform === platform && it.language === 'Английский' && it.status !== 'done');
+  if (rows.length === 0) {
+    status.textContent = `Нет английских правок для платформы ${platform}.`;
+    return;
+  }
+  const rowsToMerge = rows.filter(it => !it.comment);
+  const rowsWithComment = rows.filter(it => it.comment);
+  const corrections = {};
+  rowsToMerge.forEach(it => { corrections[it.key] = it.newText; });
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const { text, matchedKeys } = mergePo(reader.result, corrections);
+    const totalKeys = Object.keys(corrections).length;
+    const notFoundKeys = Object.keys(corrections).filter(k => !matchedKeys.has(k));
+
+    if (matchedKeys.size > 0) {
+      rowsToMerge.forEach(it => {
+        if (matchedKeys.has(it.key)) {
+          it.status = 'ready';
+        }
+      });
+      await saveItems();
+      render();
+    }
+
+    let statusHtml = `${platform}: нашлось ${matchedKeys.size} из ${totalKeys}` +
+      (matchedKeys.size > 0 ? ' — отмечены как «Готово к загрузке» в таблице' : '');
+    if (notFoundKeys.length > 0) {
+      statusHtml += `, не найдено в файле: ${notFoundKeys.length} (придётся править вручную)` +
+        `<ul style="margin:6px 0 0; padding-left:18px;">` +
+        notFoundKeys.map(k => `<li>${esc(k)}</li>`).join('') +
+        `</ul>`;
+    }
+    if (rowsWithComment.length > 0) {
+      statusHtml += `<div style="margin-top:8px;">С комментариями — исправить вручную (${rowsWithComment.length}):</div>` +
+        `<ul style="margin:6px 0 0; padding-left:18px;">` +
+        rowsWithComment.map(it => `<li>${esc(it.key)} — <i>${esc(it.comment)}</i></li>`).join('') +
+        `</ul>`;
+    }
+    status.innerHTML = statusHtml;
+
+    const blob = new Blob([text], { type: 'text/x-gettext-translation;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.name.replace(/\.po$/i, '') + '-changed.po';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+document.getElementById('mergePoIos').addEventListener('change', (e) => {
+  if (e.target.files[0]) handlePoUpload('iOS', e.target.files[0]);
+});
+document.getElementById('mergePoAndroid').addEventListener('change', (e) => {
+  if (e.target.files[0]) handlePoUpload('Android', e.target.files[0]);
+});
+document.getElementById('mergePoWeb').addEventListener('change', (e) => {
+  if (e.target.files[0]) handlePoUpload('Веб', e.target.files[0]);
 });
 
 (async () => {
