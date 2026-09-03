@@ -317,10 +317,6 @@
       <option>Соня</option>
       <option>Вика</option>
     </select>
-    <select id="sortOrder">
-      <option value="new">Сначала новые</option>
-      <option value="old">Сначала старые</option>
-    </select>
   </div>
   <div class="toolbar-left">
     <button id="selectAllBtn">☑ Выделить всё</button>
@@ -586,14 +582,7 @@ function render() {
   const langOptions = ['Русский','Английский','Азербайджанский','Амхарский','Армянский','Грузинский','Казахский','Киргизский','Таджикский','Узбекский','Суахили'];
   const authorOptions = ['Настя','Диляра','Соня','Вика'];
 
-  const sortOrder = document.getElementById('sortOrder').value;
-  const sorted = filtered.slice().sort((a, b) => {
-    const dateCmp = (a.date || '').localeCompare(b.date || '');
-    if (dateCmp !== 0) return sortOrder === 'old' ? dateCmp : -dateCmp;
-    const idxA = items.indexOf(a), idxB = items.indexOf(b);
-    return sortOrder === 'old' ? idxA - idxB : idxB - idxA;
-  });
-  list.innerHTML = sorted.map(it => {
+  list.innerHTML = filtered.slice().reverse().map(it => {
     if (editingId === it.id) {
       const isKnownLang = langOptions.includes(it.language);
       const isKnownAuthor = authorOptions.includes(it.author);
@@ -764,7 +753,6 @@ document.getElementById('filterStatus').addEventListener('change', render);
 document.getElementById('filterLanguage').addEventListener('change', render);
 document.getElementById('filterAuthor').addEventListener('change', render);
 document.getElementById('filterMonth').addEventListener('change', render);
-document.getElementById('sortOrder').addEventListener('change', render);
 
 // --- Импорт из вставленной таблицы (tab-separated, как при копировании из Excel/Sheets) ---
 document.getElementById('importBtn').addEventListener('click', async () => {
