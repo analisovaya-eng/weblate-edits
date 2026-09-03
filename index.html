@@ -366,21 +366,6 @@ function maybeShowThanks() {
   localStorage.setItem(ADD_COUNTER_KEY, String(n));
 }
 
-// --- Всплывашка при отметке "Готово" ---
-const DONE_ITEMS = [
-  { src: 'assets/done-01.gif', caption: 'Готово! 👋' }
-];
-function showDone() {
-  const pick = DONE_ITEMS[Math.floor(Math.random() * DONE_ITEMS.length)];
-  document.getElementById('thanksImg').src = pick.src;
-  document.getElementById('thanksCaption').textContent = pick.caption;
-  const overlay = document.getElementById('thanksOverlay');
-  overlay.classList.add('show');
-  spawnConfetti();
-  clearTimeout(thanksTimer);
-  thanksTimer = setTimeout(hideThanks, 2800);
-}
-
 // --- Загрузка / сохранение (локально или через общий Apps Script backend) ---
 async function loadItems() {
   if (apiUrl) {
@@ -576,14 +561,11 @@ function render() {
         }
       } else if (act === 'toggle') {
         const it = items.find(i => i.id === id);
-        let justFinished = false;
         if (it) {
-          justFinished = it.status !== 'done';
           it.status = it.status === 'done' ? 'pending' : 'done';
           it.doneDate = it.status === 'done' ? todayStr() : null;
         }
         await saveItems();
-        if (justFinished) showDone();
       } else if (act === 'edit') {
         editingId = id;
       } else if (act === 'cancel') {
