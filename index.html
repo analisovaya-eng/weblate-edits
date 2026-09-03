@@ -245,13 +245,14 @@
 </div>
 <input id="customLang" placeholder="Свой язык">
 <input id="customAuthor" placeholder="Имя">
+<select id="webComponent" style="display: none; margin-bottom: 8px;"></select>
 <div class="edit-row" style="margin-bottom: 8px;">
   <input id="key" placeholder="Ключ / контекст">
   <input id="date" type="date" title="Дата внесения">
 </div>
 <textarea id="oldText" placeholder="Что сейчас (текущий текст)"></textarea>
 <textarea id="newText" placeholder="На что исправить"></textarea>
-<input id="comment" placeholder="Комментарий (только если надо исправить часть строки, два ключа или есть какая-то особенность)" style="margin-bottom: 8px;">
+<input id="comment" placeholder="Комментарий (необязательно)" style="margin-bottom: 8px;">
 <button id="addBtn">+ Добавить правку</button>
 
 <details>
@@ -287,10 +288,11 @@
       </div>
       <div>
         <label class="hint" style="display:block; margin-bottom:4px;">Файл веба .po</label>
-        <div class="edit-row" style="grid-template-columns: auto 1fr;">
+        <div class="edit-row" style="grid-template-columns: auto auto; margin-bottom: 6px;">
           <select id="mergeLangWeb"></select>
-          <input type="file" id="mergePoWeb" accept=".po">
+          <select id="mergeComponentWeb"></select>
         </div>
+        <input type="file" id="mergePoWeb" accept=".po">
       </div>
     </div>
     <div id="mergePoStatus" class="hint" style="margin-top:8px;"></div>
@@ -325,6 +327,9 @@
       <option>Диляра</option>
       <option>Соня</option>
       <option>Вика</option>
+    </select>
+    <select id="filterComponent">
+      <option value="">Все компоненты</option>
     </select>
   </div>
   <div class="toolbar-left">
@@ -515,6 +520,26 @@ authorSel.addEventListener('change', () => {
   customAuthor.style.display = authorSel.value === '__custom' ? 'block' : 'none';
 });
 
+// --- Компонент веб-сайта: показывается только для платформы "Веб" ---
+const WEB_COMPONENTS = [
+  'wb-web', 'wb-web-ai-assistant', 'wb-web-astro', 'wb-web-astro-shared-widgets',
+  'wb-web-b2b', 'wb-web-brand', 'wb-web-chats', 'wb-web-club', 'wb-web-invest',
+  'wb-web-kids', 'wb-web-landings', 'wb-web-lottery', 'wb-web-loyalty',
+  'wb-web-main-menu', 'wb-web-orders', 'wb-web-pdl', 'wb-web-personal-cabinet',
+  'wb-web-pharma', 'wb-web-product', 'wb-web-realty', 'wb-web-recommendations',
+  'wb-web-refund', 'wb-web-resale', 'wb-web-rqx', 'wb-web-wallet',
+  'wb-web-wbtrack', 'wb-web-wishlists'
+];
+const platformSel = document.getElementById('platform');
+const webComponentSel = document.getElementById('webComponent');
+webComponentSel.innerHTML = WEB_COMPONENTS.map(c => `<option>${c}</option>`).join('');
+platformSel.addEventListener('change', () => {
+  webComponentSel.style.display = platformSel.value === 'Веб' ? 'block' : 'none';
+});
+document.getElementById('filterComponent').innerHTML =
+  '<option value="">Все компоненты</option>' + WEB_COMPONENTS.map(c => `<option>${c}</option>`).join('');
+document.getElementById('filterComponent').addEventListener('change', render);
+
 function populateLanguageFilter() {
   const sel = document.getElementById('filterLanguage');
   const current = sel.value;
@@ -572,12 +597,14 @@ function getFilteredItems() {
   const fl = document.getElementById('filterLanguage').value;
   const fa = document.getElementById('filterAuthor').value;
   const fm = document.getElementById('filterMonth').value;
+  const fc = document.getElementById('filterComponent').value;
   return items.filter(it =>
     (!fp || it.platform === fp) &&
     (!fs || it.status === fs) &&
     (!fl || it.language === fl) &&
     (!fa || it.author === fa) &&
-    (!fm || (it.date && it.date.slice(0, 7) === fm))
+    (!fm || (it.date && it.date.slice(0, 7) === fm)) &&
+    (!fc || it.component === fc)
   );
 }
 
@@ -608,6 +635,9 @@ function render() {
             <option value="__custom" ${!isKnownLang?'selected':''}>Другой…</option>
           </select>
         </div>
+        <select data-field="webComponent" style="display:${it.platform==='Веб'?'block':'none'}; margin-bottom:6px;">
+          ${WEB_COMPONENTS.map(c => `<option ${it.component===c?'selected':''}>${c}</option>`).join('')}
+        </select>
         <input data-field="customLang" placeholder="Свой язык" value="${!isKnownLang ? esc(it.language) : ''}" style="display:${!isKnownLang?'block':'none'}; margin-bottom:6px;">
         <div class="edit-row">
           <select data-field="author">
@@ -640,6 +670,7 @@ function render() {
           <input type="checkbox" data-select="${it.id}" ${checked}>
           <div class="badges">
             <span class="badge platform ${platformClass}">${esc(it.platform)}</span>
+            ${it.component ? `<span class="badge">${esc(it.component)}</span>` : ''}
             <span class="badge language">${esc(it.language)}</span>
             ${it.key ? `<span class="badge key">${esc(it.key)}</span>` : ''}
             ${it.author ? `<span class="badge author">${esc(it.author)}</span>` : ''}
@@ -684,6 +715,12 @@ function render() {
       card.querySelector('[data-field="customAuthor"]').style.display = e.target.value === '__custom' ? 'block' : 'none';
     });
   });
+  list.querySelectorAll('[data-field="platform"]').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const card = e.target.closest('.edit-form');
+      card.querySelector('[data-field="webComponent"]').style.display = e.target.value === 'Веб' ? 'block' : 'none';
+    });
+  });
 
   list.querySelectorAll('button[data-act]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -721,6 +758,7 @@ function render() {
           it.oldText = card.querySelector('[data-field="oldText"]').value.trim();
           it.newText = card.querySelector('[data-field="newText"]').value.trim();
           it.comment = card.querySelector('[data-field="comment"]').value.trim();
+          it.component = it.platform === 'Веб' ? card.querySelector('[data-field="webComponent"]').value : '';
         }
         editingId = null;
         await saveItems();
@@ -745,7 +783,8 @@ document.getElementById('addBtn').addEventListener('click', async () => {
     date: document.getElementById('date').value || todayStr(),
     oldText, newText,
     comment: document.getElementById('comment').value.trim(),
-    status: 'pending'
+    status: 'pending',
+    component: document.getElementById('platform').value === 'Веб' ? webComponentSel.value : ''
   });
   document.getElementById('key').value = '';
   document.getElementById('oldText').value = '';
@@ -917,11 +956,16 @@ function mergePo(poText, corrections) {
   return { text: outParts.join('\n\n') + '\n', matchedKeys };
 }
 
-function handlePoUpload(platform, language, file) {
+function handlePoUpload(platform, language, file, component) {
   const status = document.getElementById('mergePoStatus');
-  const rows = items.filter(it => it.platform === platform && it.language === language && it.status !== 'done');
+  const rows = items.filter(it =>
+    it.platform === platform &&
+    it.language === language &&
+    it.status !== 'done' &&
+    (!component || it.component === component)
+  );
   if (rows.length === 0) {
-    status.textContent = `Нет правок (${language}) для платформы ${platform}.`;
+    status.textContent = `Нет правок (${language}${component ? ', ' + component : ''}) для платформы ${platform}.`;
     return;
   }
   const rowsToMerge = rows.filter(it => !it.comment);
@@ -981,7 +1025,7 @@ document.getElementById('mergePoAndroid').addEventListener('change', (e) => {
   if (e.target.files[0]) handlePoUpload('Android', document.getElementById('mergeLangAndroid').value, e.target.files[0]);
 });
 document.getElementById('mergePoWeb').addEventListener('change', (e) => {
-  if (e.target.files[0]) handlePoUpload('Веб', document.getElementById('mergeLangWeb').value, e.target.files[0]);
+  if (e.target.files[0]) handlePoUpload('Веб', document.getElementById('mergeLangWeb').value, e.target.files[0], document.getElementById('mergeComponentWeb').value);
 });
 
 (() => {
@@ -989,6 +1033,7 @@ document.getElementById('mergePoWeb').addEventListener('change', (e) => {
   ['mergeLangIos', 'mergeLangAndroid', 'mergeLangWeb'].forEach(id => {
     document.getElementById(id).innerHTML = mergeLangOptions.map(l => `<option>${l}</option>`).join('');
   });
+  document.getElementById('mergeComponentWeb').innerHTML = WEB_COMPONENTS.map(c => `<option>${c}</option>`).join('');
 })();
 
 (async () => {
