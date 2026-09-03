@@ -588,8 +588,10 @@ function render() {
 
   const sortOrder = document.getElementById('sortOrder').value;
   const sorted = filtered.slice().sort((a, b) => {
-    const cmp = (a.date || '').localeCompare(b.date || '');
-    return sortOrder === 'old' ? cmp : -cmp;
+    const dateCmp = (a.date || '').localeCompare(b.date || '');
+    if (dateCmp !== 0) return sortOrder === 'old' ? dateCmp : -dateCmp;
+    const idxA = items.indexOf(a), idxB = items.indexOf(b);
+    return sortOrder === 'old' ? idxA - idxB : idxB - idxA;
   });
   list.innerHTML = sorted.map(it => {
     if (editingId === it.id) {
